@@ -1,41 +1,46 @@
-const emailValidation = require('../../helpars/emaiValidation');
-const emailVerification = require('../../helpars/emailVerification');
-const User = require('../../model/user.js');
-const bcrypt = require('bcrypt');
-const emailTemplate = require('../../helpars/emailTemplate');
-var jwt = require('jsonwebtoken');
+const emailValidation = require("../../helpars/emaiValidation");
+const emailVerification = require("../../helpars/emailVerification");
+const aleaRNGFactory = require("number-generator/lib/aleaRNGFactory");
+const User = require("../../model/user.js");
+const bcrypt = require("bcrypt");
+const emailTemplate = require("../../helpars/emailTemplate");
+// var jwt = require('jsonwebtoken');
 
+async function registrationControllers(req, res) {
+  const { fullname, email, password } = req.body;
 
-async function registrationControllers (req, res) {
+  if (!fullname) {
+    return res.json({ error: "Name is Required " });
+  }
 
-    const {fname,lname,email,password}=req.body;
+  if (emailValidation(email)) {
+    return res.json({ error: "Valid Email Required" });
+  }
 
-    if(!fname || !lname){
-        return res.json({error:'Frist Name and Last Name is Required '})
-    }
+  let existingUserCheck = await User.find({ email });
+  if (existingUserCheck.length > 0) {
+    return res.json({ error: "Email Already In Use" });
+  }
 
-    if(emailValidation(email)){
-        return res.json({error:'Valid Email Required'})
-    }
-
-    let existingUserCheck=await User.find({email})
-    if(existingUserCheck.length>0){
-        return res.json({error:'Email Already In Use'})
-    }
-
-    bcrypt.hash(password, 10, function(err, hash) {
-        let user=new User({
-            fname:fname,
-            lname:lname,
-            email:email,
-            password:hash,
-        })
-        var token = jwt.sign({ email },process.env.JWTSCRET,{ expiresIn: '1h' });
-        emailVerification(user.email,emailTemplate(token))
-        user.save()
-        res.send(user)
+  bcrypt.hash(password, 10, async function (err, hash) {
+    let user = new User({
+      fullname,
+      email: email,
+      password: hash,
     });
-  
+    // var token = jwt.sign({ email },process.env.JWTSCRET,{ expiresIn: '1h' });
+    user.save();
+    const generator2 = aleaRNGFactory(Date.now());
+    let randomOtp = generator2.uInt32().toString().substring(0, 4);
+    let otpset = await User.findOneAndUpdate(
+      { email },
+      { $set: { otp: randomOtp } },
+      { new: true }
+    );
+    emailVerification(user.email, emailTemplate(randomOtp));
+
+    res.send(user);
+  });
 }
 
-module.exports=registrationControllers;
+module.exports = registrationControllers;

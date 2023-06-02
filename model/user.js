@@ -3,14 +3,11 @@ const { default: mongoose } = require("mongoose");
 const Schema = mongoose.Schema;
 
 const userSchema = new Schema({
- fname:{
+ fullname:{
     type:String,
     required:true,
  },
- lname:{
-    type:String,
-    required:true,
- },
+
  email:{
     type:String,
     required:true,
@@ -25,14 +22,39 @@ const userSchema = new Schema({
  addressTwo:{
     type:String,
  },
+ created:{
+   type:Date,
+   default:Date.now()
+ },
  telephone:String,
  postcode:String,
  state:String,
  country:String,
- verifed:{
+ verifid:{
    type:Boolean,
    default:false
- }
+ },
+ merchant:{
+   type:Boolean,
+   default:false
+ },
+ avatar:{
+   type:String,
+ },
+ role:{
+   type:String,
+   default:'member',
+   enum:['member','admin','merchant']
+ },
+ update:{
+   type:Date,
+
+ },
+ otp:{
+  type:String,
+},
+ facebookid:String,
+ linkdin:String,
 });
 
 module.exports= mongoose.model("User",userSchema)
